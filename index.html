@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Evidence-based preliminary security configuration review of foretoldbooks.com">
+<title>Website Security Audit | Foretold Books</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">WEB APPLICATION SECURITY REVIEW · 14 OCTOBER 2026</p>
+    <h1>Foretold Books</h1>
+    <p class="lede">Preliminary Website Security Audit</p>
+    <div class="meta"><span>Target: <strong>https://foretoldbooks.com/</strong></span><span>Assessment type: Passive configuration review</span><span>Status: Preliminary</span></div>
+  </div>
+</header>
+<main class="wrap">
+  <section class="notice">
+    <strong>Scope note</strong>
+    This report documents the evidence supplied from a browser inspection of the homepage response and cookie table. It is not a penetration test or a complete vulnerability scan. Unperformed checks are explicitly marked as not assessed.
+  </section>
+
+  <section>
+    <h2>1. Executive summary</h2>
+    <p>The homepage was requested over HTTPS and returned <code>200 OK</code>. The response identifies LiteSpeed and PHP 8.2.34, includes a Permissions-Policy header, and exposes standard WordPress REST API discovery links. The supplied response-header capture did not show several commonly reviewed security headers. The browser cookie table also suggests that several analytics-related cookies lack explicit security attributes.</p>
+    <p>These observations indicate opportunities to review and harden configuration; they do not independently prove that the site is exploitable or compromised. No active vulnerability scan, exploit attempt, authentication test, or access-control test is claimed in this report.</p>
+    <div class="stats">
+      <div><strong>3</strong><span>documented findings</span></div>
+      <div><strong>HTTPS</strong><span>homepage request observed</span></div>
+      <div><strong>Not tested</strong><span>active application vulnerabilities</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>2. Scope and methodology</h2>
+    <h3>In scope</h3>
+    <ul>
+      <li>Public homepage request: <code>GET /</code></li>
+      <li>Response status and the supplied HTTP response headers</li>
+      <li>Browser cookie table for the observed session</li>
+      <li>Basic review of technology-disclosure and header-hardening opportunities</li>
+    </ul>
+    <h3>Method</h3>
+    <p>Evidence was collected through browser Developer Tools and supplied for analysis. Findings were classified conservatively: a header not visible in the supplied response is treated as an observation to verify, not proof of exploitability. Cookie purposes are inferred from names only and should be confirmed against the site implementation.</p>
+    <h3>Out of scope / not assessed</h3>
+    <ul>
+      <li>Automated vulnerability scanning and crawling</li>
+      <li>SQL injection, cross-site scripting, CSRF or other exploit testing</li>
+      <li>Authentication, authorization and account/session workflows</li>
+      <li>Server-side patch status, source code, hosting configuration and database security</li>
+      <li>Full TLS protocol/cipher assessment and testing across all pages/subdomains</li>
+      <li>Purchase, registration or form submission workflows</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>3. Evidence snapshot</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Item</th><th>Observed evidence</th><th>Interpretation</th></tr></thead>
+      <tbody>
+        <tr><td>Homepage response</td><td><code>GET /</code>, <code>200 OK</code>, port 443</td><td>Homepage was reachable over HTTPS at the time of capture.</td></tr>
+        <tr><td>Server disclosure</td><td><code>server: LiteSpeed</code><br><code>x-powered-by: PHP/8.2.34</code></td><td>Technology/version information is disclosed.</td></tr>
+        <tr><td>Permissions Policy</td><td><code>permissions-policy</code> present</td><td>A policy exists; appropriateness was not fully evaluated.</td></tr>
+        <tr><td>WordPress discovery</td><td><code>/wp-json/</code> and page REST endpoint linked</td><td>Standard WordPress discovery links; not a vulnerability by themselves.</td></tr>
+        <tr><td>Header hardening</td><td>CSP, HSTS, X-Content-Type-Options and Referrer-Policy response headers were not visible in the supplied response list.</td><td>Verify with a fresh complete response and across relevant pages.</td></tr>
+        <tr><td>Cookies</td><td>Consent cookie shows SameSite=Lax; analytics-like cookies appear to lack Secure, HttpOnly and explicit SameSite.</td><td>Review per-cookie purpose and required attributes; browser table interpretation should be confirmed.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>4. Findings</h2>
+    <article class="finding">
+      <div class="finding-head"><span class="id">F-01</span><span class="severity low">Low · Hardening</span></div>
+      <h3>Server technology disclosure</h3>
+      <p><strong>Evidence:</strong> The supplied response contains <code>server: LiteSpeed</code>, <code>x-powered-by: PHP/8.2.34</code>, and <code>x-turbo-charged-by: LiteSpeed</code>.</p>
+      <p><strong>Risk:</strong> Technology disclosure may help reconnaissance by identifying components and narrowing research into relevant vulnerabilities. This evidence does not establish that any component is unpatched or vulnerable.</p>
+      <p><strong>Recommendation:</strong> Where operationally appropriate, suppress unnecessary version-disclosure headers. Verify that PHP, WordPress core, themes, plugins and server software are supported and patched.</p>
+      <p><strong>Confidence:</strong> High that the headers were present in the supplied capture; low regarding practical exploitability without further checks.</p>
+    </article>
+
+    <article class="finding">
+      <div class="finding-head"><span class="id">F-02</span><span class="severity review">Review required</span></div>
+      <h3>Security response header hardening</h3>
+      <p><strong>Evidence:</strong> The supplied response-header list did not show <code>Strict-Transport-Security</code>, <code>Content-Security-Policy</code>, <code>X-Content-Type-Options</code>, or a <code>Referrer-Policy</code> response header. DevTools separately displayed a request-level referrer policy; that is not proof that the server sends the response header.</p>
+      <p><strong>Risk:</strong> Depending on application behavior, missing headers can reduce browser-side defense-in-depth. Absence alone is not proof of a directly exploitable vulnerability.</p>
+      <p><strong>Recommendation:</strong> Recheck a fresh full response and representative pages. Consider HSTS after confirming HTTPS works across intended subdomains; deploy CSP in report-only mode before enforcing it; set <code>X-Content-Type-Options: nosniff</code> where appropriate; and define a suitable Referrer-Policy.</p>
+      <p><strong>Confidence:</strong> Medium; based on the supplied response capture only.</p>
+    </article>
+
+    <article class="finding">
+      <div class="finding-head"><span class="id">F-03</span><span class="severity review">Review required</span></div>
+      <h3>Cookie security attributes require review</h3>
+      <p><strong>Evidence:</strong> The browser cookie table shows a consent-related cookie with <code>SameSite=Lax</code>. Several cookies with <code>sbjs_</code> names appear to have no Secure, HttpOnly or explicit SameSite attributes set in the displayed table.</p>
+      <p><strong>Risk:</strong> Cookies without Secure may be sent over HTTP if such requests are possible. Cookies without HttpOnly may be readable by JavaScript. The practical impact depends on each cookie's purpose and sensitivity; analytics cookies are not equivalent to authentication/session cookies.</p>
+      <p><strong>Recommendation:</strong> Confirm each cookie's function. Set Secure for cookies that should only travel over HTTPS, use HttpOnly for cookies that do not require JavaScript access, and select an appropriate SameSite policy. Retest after configuration changes.</p>
+      <p><strong>Confidence:</strong> Medium; based on one browser cookie table. No cookie values are reproduced in this report.</p>
+    </article>
+  </section>
+
+  <section>
+    <h2>5. Prioritized recommendations</h2>
+    <ol>
+      <li><strong>Verify and improve headers:</strong> confirm current response behavior and configure suitable CSP, HSTS, X-Content-Type-Options and Referrer-Policy settings.</li>
+      <li><strong>Review cookie settings:</strong> document the purpose of each cookie and apply attributes appropriate to its role.</li>
+      <li><strong>Reduce unnecessary disclosure:</strong> suppress avoidable version headers and confirm server/application components are supported and patched.</li>
+      <li><strong>Perform authorized follow-up testing:</strong> use a non-destructive scanner configuration and manual checks only within a written scope approved by the site owner.</li>
+      <li><strong>Expand coverage:</strong> assess other public pages and, if explicitly in scope, authentication, forms, access control and WordPress/plugin exposure.</li>
+      <li><strong>Retest:</strong> preserve before-and-after evidence for any changes and confirm that hardening does not break site functionality.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>6. Conclusion</h2>
+    <p>The observed homepage was reachable over HTTPS and returned a successful response. The supplied evidence identifies server technology disclosure, security-header settings that warrant verification, and cookie attributes that should be reviewed. These are configuration-hardening observations, not proof of compromise.</p>
+    <p>A definitive security posture cannot be established from one homepage response and one cookie table. A broader, authorized assessment and retesting are recommended before assigning an overall security rating.</p>
+  </section>
+
+  <section>
+    <h2>7. References</h2>
+    <ul>
+      <li><a href="https://owasp.org/www-project-web-security-testing-guide/">OWASP Web Security Testing Guide</a></li>
+      <li><a href="https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html">OWASP HTTP Headers Cheat Sheet</a></li>
+      <li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html">OWASP Session Management Cheat Sheet</a></li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie">MDN: Set-Cookie</a></li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy">MDN: Content-Security-Policy</a></li>
+    </ul>
+  </section>
+  <footer><p>Prepared as an educational security review. Evidence reflects the supplied browser captures and the assessment scope stated above. No exploit attempts are claimed.</p></footer>
+</main>
+</body>
+</html>
